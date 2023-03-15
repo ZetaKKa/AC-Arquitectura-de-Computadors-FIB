@@ -1,0 +1,127 @@
+#include "CacheSim.h"
+
+/* Posa aqui les teves estructures de dades globals
+ * per mantenir la informacio necesaria de la cache
+ * */
+ 
+typedef struct {
+    unsigned int v;     //bit de validesa
+    int tag;            //etiqueta a la cache
+} ViaCache;
+
+typedef struct {        
+    ViaCache via[2];    //2 associativa
+    unsigned int lru;   
+} Conjunt;
+
+Conjunt cache[64];      //cache de 64 conjunts => 4KB/32B de linia = 128/2vies = 64
+
+
+/* La rutina init_cache es cridada pel programa principal per
+ * inicialitzar la cache.
+ * La cache es inicialitzada al començar cada un dels tests.
+ * */
+void init_cache ()
+{
+    totaltime=0.0;
+    /* Escriu aqui el teu codi */
+    
+    for (int i = 0; i < 64; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            cache[i].via[j].v = 0;
+        }
+    }
+}
+
+/* La rutina reference es cridada per cada referencia a simular */ 
+void reference (unsigned int address)
+{
+    unsigned int byte;
+    unsigned int bloque_m; 
+    unsigned int conj_mc;
+    
+    unsigned int via_mc;       // esta parámetro sólo se usa en el fichero
+                               // MiSimulador2.c para la cache 2 asociativa 
+    
+    unsigned int tag;
+    unsigned int miss;         // booleano que indica si es miss
+    unsigned int replacement;  // booleano que indica si 
+                               // se reemplaza una línea válida
+    unsigned int tag_out;      // TAG de la linia reemplazada
+    float t1,t2;               // Variables per mesurar el temps (NO modificar)
+    
+    t1=GetTime();
+    /* Escriu aqui el teu codi */
+    
+    byte = address & 0x0000001F;                // bit 27 - 31
+    bloque_m = address >> 5;                    // bit 0 - 26
+    conj_mc = (address & 0x000007E0) >> 5;      // bit 21 - 26
+    tag = address >> 11;                        // bit 0 - 20
+    
+    
+    //hit via 0
+    if (cache[conj_mc].via[0].v == 1 && cache[conj_mc].via[0].tag == tag){
+        miss = via_mc = replacement = 0;
+        cache[conj_mc].lru = 1;
+    }
+    //hit via 1
+    else if (cache[conj_mc].via[1].v == 1 && cache[conj_mc].via[1].tag == tag){
+        via_mc = 1;
+        cache[conj_mc].lru = miss = replacement = 0;
+    }
+    
+    //MISSs
+    else {
+        
+        miss = 1;
+        
+        //via 0 
+        if (cache[conj_mc].via[0].v == 0) { 
+            via_mc = replacement = 0;
+            cache[conj_mc].via[via_mc].v = cache[conj_mc].lru = 1;
+            
+            cache[conj_mc].via[via_mc].tag = tag;
+        }
+    
+        else if (cache[conj_mc].via[0].tag != tag) {    //sense espai a via 0
+            //via 1
+            if (cache[conj_mc].via[1].v == 0) {
+                via_mc = 1;
+                cache[conj_mc].via[via_mc].v = 1;
+                replacement = cache[conj_mc].lru = 0;
+                
+                cache[conj_mc].via[via_mc].tag = tag;
+            }
+            
+            //LRU
+            else {
+                
+                replacement = 1;
+                
+                via_mc = cache[conj_mc].lru;
+                tag_out = cache[conj_mc].via[via_mc].tag;
+                cache[conj_mc].via[via_mc].tag = tag;
+            
+                if (via_mc > 0) cache[conj_mc].lru = 0;
+                else cache[conj_mc].lru = 1;
+            }
+        }
+    }
+
+    /* La funcio test_and_print escriu el resultat de la teva simulacio
+     * per pantalla (si s'escau) i comproba si hi ha algun error
+     * per la referencia actual. També mesurem el temps d'execució
+     * */
+    
+    t2=GetTime();
+    totaltime+=t2-t1;
+    test_and_print2 (address, byte, bloque_m, conj_mc, via_mc, tag, miss, replacement, tag_out);
+}
+
+/* La rutina final es cridada al final de la simulacio */ 
+void final ()
+{
+    /* Escriu aqui el teu codi */ 
+    
+}
+

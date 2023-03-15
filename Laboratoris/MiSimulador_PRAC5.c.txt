@@ -1,0 +1,99 @@
+#include "CacheSim.h"
+
+/* Posa aqui les teves estructures de dades globals
+ * per mantenir la informacio necesaria de la cache
+ * */
+
+typedef struct {
+    unsigned int v;     //bit de validesa
+    int tag;            //etiqueta a la cache
+} liniaCache;
+
+
+#define cacheSize 128
+
+liniaCache cache[cacheSize];
+
+
+/* La rutina init_cache es cridada pel programa principal per
+ * inicialitzar la cache.
+ * La cache es inicialitzada al comen?ar cada un dels tests.
+ * */
+void init_cache ()
+{
+    totaltime=0.0;
+
+    for (int i = 0; i < cacheSize; ++i) {
+        cache[i].v = 0;
+    }
+}
+
+/* La rutina reference es cridada per cada referencia a simular */ 
+void reference (unsigned int address)
+{
+    unsigned int byte;
+    unsigned int bloque_m; 
+    unsigned int linea_mc;
+    
+    /*unsigned int via_mc;       // esta par?etro s?o se usa en el fichero
+     *                           // MiSimulador2.c para la cache 2 asociativa */
+    
+    unsigned int tag;
+    unsigned int miss;         // booleano que indica si es miss
+    unsigned int replacement;  // booleano que indica si 
+                               // se reemplaza una l?ea v?ida
+    unsigned int tag_out;      // TAG de la linia reemplazada
+    float t1,t2;               // Variables per mesurar el temps (NO modificar)
+    
+    t1=GetTime();
+    
+    byte = address & 0x0000001F;                 // bit 27 - 31
+    bloque_m = address >> 5;                       // bit 0 - 26
+    linea_mc = (address & 0x00000FE0) >> 5;        // bit 20 - 26
+    tag = address >> 12;                           // bit 0 - 19
+
+
+    //Validesa
+    if (cache[linea_mc].v == 1) {
+    
+        //miss
+        if (cache[linea_mc].tag != tag) { 
+            
+            miss = replacement = 1;
+            
+            tag_out = cache[linea_mc].tag;
+            cache[linea_mc].tag = tag;
+        }
+        
+        //hit
+        else {
+            
+            miss = replacement = 0;
+        }
+    }
+    
+    //No valid (1r accss)
+    else {
+        
+        miss = 1;
+        replacement = 0;
+        
+        cache[linea_mc].v = 1;
+        cache[linea_mc].tag = tag;
+    }
+        
+    /* La funcio test_and_print escriu el resultat de la teva simulacio
+     * per pantalla (si s'escau) i comproba si hi ha algun error
+     * per la referencia actual. Tamb? mesurem el temps d'execuci?
+     * */
+    t2=GetTime();
+    totaltime+=t2-t1;
+    test_and_print (address, byte, bloque_m, linea_mc, tag,
+        miss, replacement, tag_out);
+}
+
+/* La rutina final es cridada al final de la simulacio */ 
+void final ()
+{
+    
+}
